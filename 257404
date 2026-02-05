@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eco Hide - منصة دباغة الجلود المجتمعية</title>
+    
+    <!-- Leaflet CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/nt-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Leaflet Search Plugin -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-search@3.0.2/dist/leaflet-search.src.css" />
+    <script src="https://unpkg.com/leaflet-search@3.0.2/dist/leaflet-search.src.js"></script>
+    
+    <!-- Leaflet Locate Plugin -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol@0.79.0/dist/L.Control.Locate.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol@0.79.0/dist/L.Control.Locate.min.js" charset="utf-8"></script>
+    
+    <!-- Nominatim Geocoding (بديل Google Places) -->
+    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+    
+    <style>
+        :root {
+            --primary-color: #806920;
+            --secondary-color: #519109;
+            --accent-color: #FF9800;
+            --text-color: #333;
+            --light-bg: #F9F9F9;
+            --dark-bg: #2C3E50;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--light-bg);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo-img {
+            width: 50px;
+            height: 50px;
+            background-color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-color);
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        
+        .logo-text h1 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+        
+        .logo-text p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        .nav-menu {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .nav-menu a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+        
+        .nav-menu a:hover, .nav-menu a.active {
+            background-color: rgba(255,255,255,0.2);
+        }
+        
+        .container {
+            display: flex;
+            min-height: calc(100vh - 120px);
+        }
+        
+        .sidebar {
+            width: 320px;
+            background-color: white;
+            padding: 20px;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+            overflow-y: auto;
+        }
+        
+        .main-content {
+            flex: 1;
+            padding: 20px;
+        }
+        
+        .form-section {
+            background-color: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+        
+        .form-title {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--secondary-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark-bg);
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border 0.3s;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 3px rgba(139, 195, 74, 0.2);
+        }
+        
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: background 0.3s, transform 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn:hover {
+            background-color: #1B5E20;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background-color: var(--accent-color);
+        }
+        
+        .btn-secondary:hover {
+            background-color: #F57C00;
+        }
+        
+        #map-container {
+            height: 600px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+        
+        .leaflet-control-container .leaflet-top {
+            top: 70px;
+        }
+        
+        .filter-panel {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+        
+        .filter-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .filter-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .filter-btn {
+            padding: 8px 15px;
+            background-color: #f0f0f0;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .filter-btn.active {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        
+        .filter-btn:hover:not(.active) {
+            background-color: #e0e0e0;
+        }
+        
+        .users-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        
+        .user-card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+            transition: transform 0.3s;
+        }
+        
+        .user-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .user-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: var(--secondary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        
+        .user-info h4 {
+            margin-bottom: 5px;
+        }
+        
+        .user-info p {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .user-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+        
+        .user-stat {
+            text-align: center;
+        }
+        
+        .user-stat span {
+            display: block;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        .footer {
+            background-color: var(--dark-bg);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .qr-code {
+            margin: 20px auto;
+            width: 150px;
+            height: 150px;
+            background-color: white;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        
+        /* تصميم متجاوب */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                order: 2;
+            }
+            
+            .nav-menu {
+                display: none;
+            }
+            
+            .header {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .logo {
+                justify-content: center;
+            }
+            
+            #map-container {
+                height: 400px;
+            }
+        }
+        
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            z-index: 1001;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        /* تخصيص العلامات */
+        .leaflet-marker-icon {
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        
+        .location-search {
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background-color: #f9f9f9;
+        }
+        
+        .search-results {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            display: none;
+        }
+        
+        .search-result-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .search-result-item:hover {
+            background-color: #f0f0f0;
+        }
+        
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+        
+        .map-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .map-control-btn {
+            background-color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: var(--primary-color);
+            transition: all 0.3s;
+        }
+        
+        .map-control-btn:hover {
+            background-color: var(--light-bg);
+            transform: scale(1.05);
+        }
+        
+        .legend {
+            position: absolute;
+            bottom: 30px;
+            right: 10px;
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            max-width: 200px;
+        }
+        
+        .legend h4 {
+            margin: 0 0 10px 0;
+            font-size: 0.9rem;
+            color: var(--dark-bg);
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+        }
+        
+        .legend-color {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <!-- الهيدر -->
+    <header class="header">
+        <div class="logo">
+            <div class="logo-img">EH</div>
+            <div class="logo-text">
+                <h1>Eco Hide</h1>
+                <p>منصة دباغة الجلود المجتمعية</p>
+            </div>
+        </div>
+        
+        <nav class="nav-menu">
+            <a href="#" class="active"><i class="fas fa-home"></i> الرئيسية</a>
+            <a href="#"><i class="fas fa-users"></i> المجتمع</a>
+            <a href="#"><i class="fas fa-map-marker-alt"></i> الخريطة</a>
+            <a href="#"><i class="fas fa-graduation-cap"></i> التعلم</a>
+            <a href="#"><i class="fas fa-user"></i> حسابي</a>
+        </nav>
+    </header>
+    
+    <!-- المحتوى الرئيسي -->
+    <div class="container">
+        <!-- الشريط الجانبي -->
+        <aside class="sidebar">
+            <!-- نموذج التسجيل -->
+            <div class="form-section">
+                <h2 class="form-title">
+                    <i class="fas fa-user-plus"></i> انضم إلى مجتمعنا
+                </h2>
+                
+                <div class="form-group">
+                    <label for="userName"><i class="fas fa-user"></i> الاسم الكامل</label>
+                    <input type="text" id="userName" class="form-control" placeholder="أدخل اسمك الكامل">
+                </div>
+                
+                <div class="form-group">
+                    <label for="userPhone"><i class="fas fa-phone"></i> رقم الهاتف</label>
+                    <input type="tel" id="userPhone" class="form-control" placeholder="مثال: 0912345678">
+                </div>
+                
+                <div class="form-group">
+                    <label for="userLocation"><i class="fas fa-map-marker-alt"></i> الموقع الجغرافي</label>
+                    <div class="location-search">
+                        <input type="text" id="locationSearch" class="form-control" placeholder="ابحث عن مدينة أو منطقة في السودان">
+                        <div id="searchResults" class="search-results"></div>
+                    </div>
+                    <div id="selectedLocation" style="margin-top: 10px; padding: 10px; background-color: #E8F5E9; border-radius: 4px; display: none;">
+                        <i class="fas fa-check-circle" style="color: green; margin-left: 5px;"></i>
+                        <span id="locationText"></span>
+                        <button onclick="clearLocation()" style="background: none; border: none; color: #666; cursor: pointer; margin-right: 10px;">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="userType"><i class="fas fa-briefcase"></i> نوع العضوية</label>
+                    <select id="userType" class="form-control">
+                        <option value="tanner">دباغ/منتج</option>
+                        <option value="supplier">مورد مواد</option>
+                        <option value="trainer">مدرب</option>
+                        <option value="buyer">مشتري</option>
+                    </select>
+                </div>
+                
+                <button class="btn" onclick="registerUser()">
+                    <i class="fas fa-check-circle"></i> تسجيل العضوية
+                </button>
+                
+                <button class="btn btn-secondary" style="margin-top: 10px;" onclick="locateUser()">
+                    <i class="fas fa-location-arrow"></i> تحديد موقعي تلقائياً
+                </button>
+            </div>
+            
+            <!-- إحصائيات -->
+            <div class="form-section">
+                <h2 class="form-title">
+                    <i class="fas fa-chart-bar"></i> إحصائيات المجتمع
+                </h2>
+                
+                <div class="user-stats">
+                    <div class="user-stat">
+                        <span id="totalUsers">0</span>
+                        <div>عضو</div>
+                    </div>
+                    <div class="user-stat">
+                        <span id="activeUsers">0</span>
+                        <div>نشطون</div>
+                    </div>
+                    <div class="user-stat">
+                        <span id="skinsTanned">0</span>
+                        <div>جلد مدبوغ</div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 15px; padding: 10px; background-color: #E8F5E9; border-radius: 6px; text-align: center;">
+                    <p style="font-size: 0.9rem; color: var(--primary-color);">
+                        <i class="fas fa-info-circle"></i> آخر تحديث: <span id="lastUpdate">اليوم</span>
+                    </p>
+                </div>
+            </div>
+            
+            <!-- روابط سريعة -->
+            <div class="form-section">
+                <h2 class="form-title">
+                    <i class="fas fa-link"></i> روابط سريعة
+                </h2>
+                
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <a href="#" class="quick-link" data-type="video">
+                        <i class="fas fa-video"></i>
+                        <span>فيديوهات التدريب</span>
+                    </a>
+                    
+                    <a href="#" class="quick-link" data-type="market">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span>سوق Eco Hide</span>
+                    </a>
+                    
+                    <a href="#" class="quick-link" data-type="support">
+                        <i class="fas fa-hands-helping"></i>
+                        <span>الدعم الفني</span>
+                    </a>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- المحتوى الرئيسي -->
+        <main class="main-content">
+            <!-- خريطة OpenStreetMap -->
+            <div class="form-section">
+                <h2 class="form-title">
+                    <i class="fas fa-map"></i> خريطة مجتمع Eco Hide
+                </h2>
+                <p>استكشف وتواصل مع الدباغين وموردي المواد بالقرب منك</p>
+                
+                <div id="map-container">
+                    <div id="map"></div>
+                    
+                    <!-- عناصر التحكم في الخريطة -->
+                    <div class="map-controls">
+                        <button class="map-control-btn" onclick="zoomIn()" title="تكبير">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                        <button class="map-control-btn" onclick="zoomOut()" title="تصغير">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                        <button class="map-control-btn" onclick="resetView()" title="إعادة تعيين">
+                            <i class="fas fa-home"></i>
+                        </button>
+                        <button class="map-control-btn" onclick="toggleLegend()" title="إظهار/إخفاء الشرح">
+                            <i class="fas fa-info"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- شرح الخريطة -->
+                    <div class="legend" id="legend" style="display: none;">
+                        <h4>شرح الرموز:</h4>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #2E7D32;"></div>
+                            <span>دباغ/منتج</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #FF9800;"></div>
+                            <span>مورد مواد</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #9C27B0;"></div>
+                            <span>مدرب</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #2196F3;"></div>
+                            <span>مشتري</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #F44336;"></div>
+                            <span>موقعك</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- لوحة الفلترة -->
+            <div class="filter-panel">
+                <div class="filter-title">
+                    <h3><i class="fas fa-filter"></i> فلترة المستخدمين</h3>
+                    <button class="btn btn-secondary" onclick="findNearestUsers()">
+                        <i class="fas fa-search-location"></i> البحث عن الأقرب إلي
+                    </button>
+                </div>
+                
+                <div class="filter-options">
+                    <button class="filter-btn active" onclick="filterUsers('all')">الجميع</button>
+                    <button class="filter-btn" onclick="filterUsers('tanner')">الدباغون</button>
+                    <button class="filter-btn" onclick="filterUsers('supplier')">الموردون</button>
+                    <button class="filter-btn" onclick="filterUsers('trainer')">المدربون</button>
+                    <button class="filter-btn" onclick="filterUsers('buyer')">المشترون</button>
+                    <button class="filter-btn" onclick="showNearbyUsers()">
+                        <i class="fas fa-location-arrow"></i> الأقرب إلي
+                    </button>
+                </div>
+            </div>
+            
+            <!-- قائمة المستخدمين -->
+            <div class="form-section">
+                <h2 class="form-title">
+                    <i class="fas fa-users"></i> أعضاء المجتمع
+                </h2>
+                
+                <div class="users-list" id="usersList">
+                    <!-- سيتم ملء هذا القسم ديناميكياً -->
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- الفوتر -->
+    <footer class="footer">
+        <div class="footer-content">
+            <h3>Eco Hide - تحويل النفايات إلى ثروة</h3>
+            <p>منصة مجتمعية تربط الدباغين التقليديين بموردي المواد والمشترين</p>
+            
+            <div class="qr-code" id="qrCode">
+                <!-- QR Code سيتم إنشاؤه ديناميكياً -->
+                <div style="width: 100%; height: 100%; background: linear-gradient(45deg, #2E7D32, #8BC34A); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; border-radius: 4px;">
+                    Eco Hide<br>
+                </div>
+            </div>
+            
+            <p>© 2026 Eco Hide. جميع الحقوق محفوظة.</p>
+            <p>©Asco Comminuty</p>
+            <p>هذا الموقع قيد التطوير | الإصدار 1.0</p>
+        </div>
+    </footer>
+    
+    <!-- إشعار -->
+    <div class="notification" id="notification">
+        <i class="fas fa-check-circle"></i>
+        <span id="notificationText">تم تنفيذ العملية بنجاح</span>
+    </div>
+
+    <!-- كود JavaScript -->
+    <script>
+        // متغيرات عامة
+        let map;
+        let markers = [];
+        let users = [];
+        let currentUser = null;
+        let userLocation = null;
+        let currentMarker = null;
+        let geocoder;
+        
+        // بيانات مستخدمين افتراضية للمحاكاة
+        const sampleUsers = [
+            { id: 1, name: "محمد أحمد", phone: "0912345678", type: "tanner", location: { lat: 15.5007, lng: 32.5599 }, skinsTanned: 45, city: "الخرطوم", status: "نشط" },
+            { id: 2, name: "علي حسن", phone: "0912345679", type: "supplier", location: { lat: 15.5107, lng: 32.5699 }, skinsTanned: 0, city: "الخرطوم", status: "نشط" },
+            { id: 3, name: "فاطمة عمر", phone: "0912345680", type: "tanner", location: { lat: 15.4907, lng: 32.5499 }, skinsTanned: 28, city: "أم درمان", status: "نشط" },
+            { id: 4, name: "يوسف إبراهيم", phone: "0912345681", type: "trainer", location: { lat: 15.5207, lng: 32.5799 }, skinsTanned: 0, city: "بحري", status: "نشط" },
+            { id: 5, name: "سارة محمود", phone: "0912345682", type: "buyer", location: { lat: 15.4807, lng: 32.5399 }, skinsTanned: 0, city: "الخرطوم", status: "نشط" },
+            { id: 6, name: "حسن عبدالله", phone: "0912345683", type: "tanner", location: { lat: 15.5307, lng: 32.5899 }, skinsTanned: 62, city: "أم درمان", status: "نشط" }
+        ];
+        
+        // المدن السودانية للبحث
+        const sudanCities = [
+            { name: "الجزيرة", lat: 15.5007, lng: 32.5599 },
+            { name: "أم درمان", lat: 15.6500, lng: 32.4833 },
+            { name: "بحري", lat: 15.6333, lng: 32.5333 },
+            { name: "بورتسودان", lat: 19.6158, lng: 37.2164 },
+            { name: "ود مدني", lat: 14.4000, lng: 33.5167 },
+            { name: "المناقل", lat: 15.4500, lng: 36.4000 },
+            { name: "هبيلا", lat: 13.1833, lng: 30.2167 },
+            { name: "نيالا", lat: 12.0500, lng: 24.8833 },
+            { name: "القضارف", lat: 14.0333, lng: 35.3833 },
+            { name: "حي ناصر", lat: 13.9833, lng: 32.3000 },
+            { name: "الدويم", lat: 13.9833, lng: 32.3000 }
+        ];
+        
+        // تهيئة الخريطة عند تحميل الصفحة
+        function initMap() {
+            // مركز افتراضي (الخرطوم)
+            const khartoum = [15.5007, 32.5599];
+            
+            // إنشاء الخريطة
+            map = L.map('map').setView(khartoum, 12);
+            
+            // إضافة طبقة الخريطة الأساسية من OpenStreetMap
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 19
+            }).addTo(map);
+            
+            // إضافة عناصر التحكم
+            L.control.scale().addTo(map);
+            
+            // تهيئة Geocoder للبحث عن المواقع
+            geocoder = L.Control.Geocoder.nominatim();
+            
+            // إضافة المستخدمين الافتراضيين إلى الخريطة
+            addSampleUsersToMap();
+            
+            // تحديث الإحصائيات
+            updateStatistics();
+            
+            // عرض قائمة المستخدمين
+            displayUsersList('all');
+            
+            // إعداد البحث عن الموقع
+            setupLocationSearch();
+            
+            // إضافة زر تحديد الموقع
+            L.control.locate({
+                position: 'topleft',
+                strings: {
+                    title: "تحديد موقعي"
+                },
+                locateOptions: {
+                    maxZoom: 16
+                }
+            }).addTo(map);
+            
+            showNotification("تم تحميل الخريطة بنجاح باستخدام OpenStreetMap");
+        }
+        
+        // إعداد البحث عن الموقع
+        function setupLocationSearch() {
+            const searchInput = document.getElementById('locationSearch');
+            const searchResults = document.getElementById('searchResults');
+            
+            searchInput.addEventListener('input', function() {
+                const query = this.value.trim();
+                
+                if (query.length < 2) {
+                    searchResults.style.display = 'none';
+                    return;
+                }
+                
+                // البحث في المدن السودانية
+                const filteredCities = sudanCities.filter(city => 
+                    city.name.includes(query)
+                );
+                
+                // البحث عبر Nominatim API (للعناصر التفصيلية)
+                searchNominatim(query, filteredCities);
+                
+                // عرض نتائج البحث المحلية
+                if (filteredCities.length > 0) {
+                    displaySearchResults(filteredCities);
+                }
+            });
+        }
+        
+        // البحث عبر Nominatim API
+        function searchNominatim(query, localResults) {
+            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', السودان')}&limit=5`;
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    const combinedResults = [...localResults];
+                    
+                    data.forEach(item => {
+                        if (!combinedResults.some(city => city.name === item.display_name.split(',')[0])) {
+                            combinedResults.push({
+                                name: item.display_name,
+                                lat: parseFloat(item.lat),
+                                lng: parseFloat(item.lon)
+                            });
+                        }
+                    });
+                    
+                    displaySearchResults(combinedResults);
+                })
+                .catch(error => {
+                    console.error('Error searching location:', error);
+                    if (localResults.length > 0) {
+                        displaySearchResults(localResults);
+                    }
+                });
+        }
+        
+        // عرض نتائج البحث
+        function displaySearchResults(results) {
+            const searchResults = document.getElementById('searchResults');
+            
+            if (results.length === 0) {
+                searchResults.innerHTML = '<div class="search-result-item">لا توجد نتائج</div>';
+                searchResults.style.display = 'block';
+                return;
+            }
+            
+            searchResults.innerHTML = results.map(result => `
+                <div class="search-result-item" onclick="selectLocation('${result.name}', ${result.lat}, ${result.lng})">
+                    <i class="fas fa-map-marker-alt" style="margin-left: 5px; color: #666;"></i>
+                    ${result.name}
+                </div>
+            `).join('');
+            
+            searchResults.style.display = 'block';
+        }
+        
+        // تحديد موقع من نتائج البحث
+        function selectLocation(name, lat, lng) {
+            userLocation = { lat, lng };
+            
+            // تحديث واجهة المستخدم
+            document.getElementById('selectedLocation').style.display = 'block';
+            document.getElementById('locationText').textContent = name;
+            document.getElementById('searchResults').style.display = 'none';
+            document.getElementById('locationSearch').value = '';
+            
+            // إضافة علامة على الخريطة
+            addUserMarkerToMap(userLocation, name);
+            
+            showNotification(`تم تحديد الموقع: ${name}`);
+        }
+        
+        // مسح الموقع المحدد
+        function clearLocation() {
+            userLocation = null;
+            document.getElementById('selectedLocation').style.display = 'none';
+            
+            // إزالة العلامة من الخريطة
+            if (currentMarker) {
+                map.removeLayer(currentMarker);
+                currentMarker = null;
+            }
+        }
+        
+        // تحديد موقع المستخدم تلقائياً
+        function locateUser() {
+            if (!navigator.geolocation) {
+                showNotification("متصفحك لا يدعم تحديد الموقع التلقائي", "error");
+                return;
+            }
+            
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    
+                    // الحصول على اسم الموقع عبر Reverse Geocoding
+                    getLocationName(lat, lng);
+                    
+                    // تحديث موقع المستخدم
+                    userLocation = { lat, lng };
+                    
+                    // إضافة علامة على الخريطة
+                    addUserMarkerToMap(userLocation, "موقعك الحالي");
+                    
+                    showNotification("تم تحديد موقعك تلقائياً بنجاح");
+                },
+                (error) => {
+                    console.error("Error getting location:", error);
+                    showNotification("تعذر تحديد موقعك تلقائياً. يرجى إدخاله يدوياً", "error");
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        }
+        
+        // الحصول على اسم الموقع من الإحداثيات
+        function getLocationName(lat, lng) {
+            const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    const locationName = data.display_name || `الموقع (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+                    
+                    // تحديث واجهة المستخدم
+                    document.getElementById('selectedLocation').style.display = 'block';
+                    document.getElementById('locationText').textContent = locationName;
+                })
+                .catch(error => {
+                    console.error('Error getting location name:', error);
+                    const locationName = `الموقع (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+                    document.getElementById('selectedLocation').style.display = 'block';
+                    document.getElementById('locationText').textContent = locationName;
+                });
+        }
+        
+        // إضافة المستخدمين الافتراضيين إلى الخريطة
+        function addSampleUsersToMap() {
+            sampleUsers.forEach(user => {
+                addMarkerToMap(user.location, user.name, user.type, user.id);
+            });
+            users = [...sampleUsers];
+        }
+        
+        // إضافة علامة إلى الخريطة
+        function addMarkerToMap(location, title, type, userId) {
+            // تحديد لون العلامة حسب نوع المستخدم
+            const markerColor = getUserColor(type);
+            
+            // إنشاء رمز مخصص
+            const icon = L.divIcon({
+                className: 'custom-marker',
+                html: `
+                    <div style="
+                        width: 40px; 
+                        height: 40px; 
+                        background-color: ${markerColor}; 
+                        border-radius: 50%; 
+                        border: 3px solid white; 
+                        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+                        display: flex; 
+                        align-items: center; 
+                        justify-content: center; 
+                        color: white; 
+                        font-weight: bold;
+                        font-size: 14px;
+                        cursor: pointer;
+                    ">
+                        ${type === 'tanner' ? 'د' : type === 'supplier' ? 'م' : type === 'trainer' ? 'ع' : 'ب'}
+                    </div>
+                `,
+                iconSize: [40, 40],
+                iconAnchor: [20, 40]
+            });
+            
+            // إنشاء العلامة
+            const marker = L.marker([location.lat, location.lng], { icon: icon })
+                .addTo(map)
+                .bindPopup(`
+                    <div style="padding: 10px; min-width: 200px;">
+                        <h3 style="margin: 0 0 10px 0; color: ${markerColor};">${title}</h3>
+                        <p style="margin: 5px 0;"><strong>النوع:</strong> ${getUserTypeArabic(type)}</p>
+                        <p style="margin: 5px 0;"><strong>المدينة:</strong> ${sampleUsers.find(u => u.id === userId)?.city || 'غير معروف'}</p>
+                        ${type === 'tanner' ? `<p style="margin: 5px 0;"><strong>الجلود المدبوغة:</strong> ${sampleUsers.find(u => u.id === userId)?.skinsTanned || 0}</p>` : ''}
+                        <button onclick="contactUser(${userId})" style="margin-top: 10px; padding: 5px 10px; background-color: ${markerColor}; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            التواصل
+                        </button>
+                    </div>
+                `);
+            
+            markers.push({ marker, userId, type });
+        }
+        
+        // إضافة علامة للمستخدم الحالي على الخريطة
+        function addUserMarkerToMap(location, title) {
+            // إزالة العلامة القديمة إذا كانت موجودة
+            if (currentMarker) {
+                map.removeLayer(currentMarker);
+            }
+            
+            // إنشاء رمز مخصص للمستخدم الحالي
+            const icon = L.divIcon({
+                className: 'current-user-marker',
+                html: `
+                    <div style="
+                        width: 50px; 
+                        height: 50px; 
+                        background-color: #F44336; 
+                        border-radius: 50%; 
+                        border: 4px solid white; 
+                        box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+                        display: flex; 
+                        align-items: center; 
+                        justify-content: center; 
+                        color: white; 
+                        font-weight: bold;
+                        font-size: 16px;
+                        cursor: pointer;
+                        animation: pulse 2s infinite;
+                    ">
+                        أنت
+                        <style>
+                            @keyframes pulse {
+                                0% { box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.7); }
+                                70% { box-shadow: 0 0 0 10px rgba(244, 67, 54, 0); }
+                                100% { box-shadow: 0 0 0 0 rgba(244, 67, 54, 0); }
+                            }
+                        </style>
+                    </div>
+                `,
+                iconSize: [50, 50],
+                iconAnchor: [25, 50]
+            });
+            
+            // إضافة العلامة إلى الخريطة
+            currentMarker = L.marker([location.lat, location.lng], { icon: icon })
+                .addTo(map)
+                .bindPopup(`<b>${title}</b><br>موقعك الحالي`)
+                .openPopup();
+            
+            // تكبير الخريطة إلى موقع المستخدم
+            map.setView([location.lat, location.lng], 14);
+        }
+        
+        // تسجيل مستخدم جديد
+        function registerUser() {
+            const name = document.getElementById("userName").value;
+            const phone = document.getElementById("userPhone").value;
+            const type = document.getElementById("userType").value;
+            
+            if (!name || !phone) {
+                showNotification("يرجى ملء الحقول المطلوبة", "error");
+                return;
+            }
+            
+            if (!userLocation) {
+                showNotification("يرجى تحديد موقعك الجغرافي", "error");
+                return;
+            }
+            
+            // إنشاء مستخدم جديد
+            const newUser = {
+                id: users.length + 1,
+                name: name,
+                phone: phone,
+                type: type,
+                location: userLocation,
+                skinsTanned: type === 'tanner' ? Math.floor(Math.random() * 20) : 0,
+                city: document.getElementById("locationText")?.textContent?.split(',')[0] || "موقع جديد",
+                status: "نشط"
+            };
+            
+            // إضافة المستخدم إلى القائمة
+            users.push(newUser);
+            
+            // إضافة علامة على الخريطة
+            addMarkerToMap(newUser.location, newUser.name, newUser.type, newUser.id);
+            
+            // تحديث الإحصائيات
+            updateStatistics();
+            
+            // تحديث قائمة المستخدمين
+            displayUsersList('all');
+            
+            // إظهار إشعار النجاح
+            showNotification(`تم تسجيل ${name} بنجاح في مجتمع Eco Hide!`);
+            
+            // حفظ المستخدم الحالي
+            currentUser = newUser;
+            
+            // تفريغ الحقول
+            document.getElementById("userName").value = "";
+            document.getElementById("userPhone").value = "";
+            clearLocation();
+        }
+        
+        // البحث عن أقرب المستخدمين
+        function findNearestUsers() {
+            if (!userLocation) {
+                showNotification("يرجى تحديد موقعك أولاً", "error");
+                return;
+            }
+            
+            // حساب المسافات لجميع المستخدمين
+            const usersWithDistance = users.map(user => {
+                const distance = calculateDistance(
+                    userLocation.lat, userLocation.lng,
+                    user.location.lat, user.location.lng
+                );
+                return { ...user, distance };
+            });
+            
+            // ترتيب المستخدمين حسب المسافة
+            usersWithDistance.sort((a, b) => a.distance - b.distance);
+            
+            // عرض أقرب 5 مستخدمين
+            const nearestUsers = usersWithDistance.slice(0, 5);
+            
+            // تحديث قائمة المستخدمين
+            displayFilteredUsers(nearestUsers, "nearest");
+            
+            // رسم خطوط إلى أقرب المستخدمين
+            drawLinesToNearestUsers(nearestUsers);
+            
+            // إظهار إشعار
+            showNotification(`تم العثور على ${nearestUsers.length} من المستخدمين القريبين منك`);
+        }
+        
+        // رسم خطوط إلى أقرب المستخدمين
+        function drawLinesToNearestUsers(nearestUsers) {
+            // إزالة الخطوط القديمة
+            markers.forEach(markerObj => {
+                if (markerObj.line) {
+                    map.removeLayer(markerObj.line);
+                }
+            });
+            
+            // رسم خطوط جديدة
+            nearestUsers.forEach(user => {
+                if (userLocation) {
+                    const line = L.polyline([
+                        [userLocation.lat, userLocation.lng],
+                        [user.location.lat, user.location.lng]
+                    ], {
+                        color: '#FF9800',
+                        weight: 3,
+                        opacity: 0.7,
+                        dashArray: '10, 10'
+                    }).addTo(map);
+                    
+                    // حفظ المرجع للخط
+                    const markerObj = markers.find(m => m.userId === user.id);
+                    if (markerObj) {
+                        markerObj.line = line;
+                    }
+                }
+            });
+        }
+        
+        // حساب المسافة بين نقطتين
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+        
+        // فلترة المستخدمين حسب النوع
+        function filterUsers(type) {
+            // تحديث أزرار الفلتر النشطة
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            if (type === 'nearby') {
+                findNearestUsers();
+                return;
+            }
+            
+            displayUsersList(type);
+        }
+        
+        // عرض قائمة المستخدمين
+        function displayUsersList(filterType) {
+            let filteredUsers = users;
+            
+            if (filterType !== 'all') {
+                filteredUsers = users.filter(user => user.type === filterType);
+            }
+            
+            displayFilteredUsers(filteredUsers, filterType);
+        }
+        
+        // عرض المستخدمين المفلترين
+        function displayFilteredUsers(filteredUsers, filterType) {
+            const usersList = document.getElementById("usersList");
+            
+            if (filteredUsers.length === 0) {
+                usersList.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #666;">
+                        <i class="fas fa-users" style="font-size: 3rem; margin-bottom: 20px; opacity: 0.3;"></i>
+                        <h3>لا يوجد مستخدمين</h3>
+                        <p>كن أول من ينضم إلى مجتمع Eco Hide في منطقتك!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            usersList.innerHTML = filteredUsers.map(user => `
+                <div class="user-card">
+                    <div class="user-header">
+                        <div class="user-avatar" style="background-color: ${getUserColor(user.type)};">
+                            ${user.name.charAt(0)}
+                        </div>
+                        <div class="user-info">
+                            <h4>${user.name}</h4>
+                            <p>${getUserTypeArabic(user.type)} • ${user.city}</p>
+                        </div>
+                    </div>
+                    
+                    <div style="margin: 10px 0; font-size: 0.9rem;">
+                        <p><i class="fas fa-phone" style="color: #666; margin-left: 5px;"></i> ${user.phone}</p>
+                        <p><i class="fas fa-map-marker-alt" style="color: #666; margin-left: 5px;"></i> ${user.city}</p>
+                    </div>
+                    
+                    <div class="user-stats">
+                        <div class="user-stat">
+                            <span>${user.skinsTanned}</span>
+                            <div>جلد مدبوغ</div>
+                        </div>
+                        <div class="user-stat">
+                            <span>${user.status}</span>
+                            <div>الحالة</div>
+                        </div>
+                        <div class="user-stat">
+                            <button onclick="contactUser(${user.id})" style="padding: 5px 10px; background-color: ${getUserColor(user.type)}; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                <i class="fas fa-comment"></i> تواصل
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // التواصل مع مستخدم
+        function contactUser(userId) {
+            const user = users.find(u => u.id === userId);
+            if (user) {
+                showNotification(`جاري الاتصال بـ ${user.name} على الرقم ${user.phone}`);
+                // في التطبيق الحقيقي: فتح نافذة محادثة أو إجراء مكالمة
+            }
+        }
+        
+        // تحديث الإحصائيات
+        function updateStatistics() {
+            document.getElementById("totalUsers").textContent = users.length;
+            document.getElementById("activeUsers").textContent = users.filter(u => u.status === "نشط").length;
+            document.getElementById("skinsTanned").textContent = users.reduce((sum, user) => sum + (user.skinsTanned || 0), 0);
+            document.getElementById("lastUpdate").textContent = new Date().toLocaleTimeString('ar-SA');
+        }
+        
+        // الحصول على لون المستخدم حسب النوع
+        function getUserColor(type) {
+            switch(type) {
+                case 'tanner': return '#2E7D32';
+                case 'supplier': return '#FF9800';
+                case 'trainer': return '#9C27B0';
+                case 'buyer': return '#2196F3';
+                default: return '#666';
+            }
+        }
+        
+        // الحصول على نوع المستخدم بالعربية
+        function getUserTypeArabic(type) {
+            switch(type) {
+                case 'tanner': return 'دباغ/منتج';
+                case 'supplier': return 'مورد مواد';
+                case 'trainer': return 'مدرب';
+                case 'buyer': return 'مشتري';
+                default: return 'عضو';
+            }
+        }
+        
+        // عرض الإشعارات
+        function showNotification(message, type = "success") {
+            const notification = document.getElementById("notification");
+            const notificationText = document.getElementById("notificationText");
+            
+            notificationText.textContent = message;
+            
+            if (type === "error") {
+                notification.style.backgroundColor = "#F44336";
+            } else if (type === "success") {
+                notification.style.backgroundColor = "#4CAF50";
+            } else if (type === "info") {
+                notification.style.backgroundColor = "#2196F3";
+            }
+            
+            notification.style.display = "flex";
+            
+            setTimeout(() => {
+                notification.style.display = "none";
+            }, 5000);
+        }
+        
+        // وظائف التحكم في الخريطة
+        function zoomIn() {
+            map.zoomIn();
+        }
+        
+        function zoomOut() {
+            map.zoomOut();
+        }
+        
+        function resetView() {
+            map.setView([15.5007, 32.5599], 12);
+            showNotification("تم إعادة تعيين الخريطة إلى العرض الافتراضي");
+        }
+        
+        function toggleLegend() {
+            const legend = document.getElementById('legend');
+            legend.style.display = legend.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        // إظهار المستخدمين القريبين
+        function showNearbyUsers() {
+            if (!userLocation) {
+                showNotification("يرجى تحديد موقعك أولاً", "error");
+                return;
+            }
+            
+            findNearestUsers();
+        }
+        
+        // تهيئة الصفحة عند التحميل
+        document.addEventListener('DOMContentLoaded', function() {
+            initMap();
+            
+            // إضافة مستمعين للأحداث
+            document.querySelectorAll('.quick-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const type = this.getAttribute('data-type');
+                    
+                    switch(type) {
+                        case 'video':
+                            showNotification("سيتم فتح مكتبة الفيديو قريباً");
+                            break;
+                        case 'market':
+                            showNotification("سيتم فتح سوق Eco Hide قريباً");
+                            break;
+                        case 'support':
+                            showNotification("سيتم فتح صفحة الدعم الفني قريباً");
+                            break;
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
